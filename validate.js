@@ -151,6 +151,8 @@
             this.post_process = languages[lang].post_process;
         }
 
+        this.waitingForHandler = false;
+
         for (var i = 0, fieldLength = fields.length; i < fieldLength; i++) {
             var field = fields[i];
 
@@ -220,10 +222,25 @@
      * @public
      * Registers a callback for a custom rule (i.e. callback_username_check)
      */
-
-    FormValidator.prototype.registerCallback = function(name, handler) {
+     
+    FormValidator.prototype.registerCallback = function(name, handler, async) {
         if (name && typeof name === 'string' && handler && typeof handler === 'function') {
-            this.handlers[name] = handler;
+            var self = this;
+        
+            this.handlers[name] = {
+                handler: handler,
+                async: (async === true) ? true : false,
+                completed: false,
+                result: true,
+                callback: function(result) {
+                    var handler = self.handlers[name];
+                    
+                    handler.completed = true;
+                    handler.result = (result === false) ? false : true;
+                    
+                    self._checkForCompletedHandlers();
+                }
+            };
         }
 
         // return this for chaining
@@ -236,8 +253,24 @@
      */
 
     FormValidator.prototype._validateForm = function(event) {
+        /*
+         * Reset the state
+         */
+        
         this.errors = [];
-
+        this.waitingForHandler = false;
+        
+        for (var name in this.handlers) {
+            var handler = this.handlers[name];
+            
+            handler.completed = false;
+            handler.result = true;
+        }
+        
+        /*
+         * Perform validation on each field
+         */
+        
         for (var key in this.fields) {
             if (this.fields.hasOwnProperty(key)) {
                 var field = this.fields[key] || {},
@@ -257,12 +290,20 @@
                 this._validateField(field);
             }
         }
-
-        if (typeof this.callback === 'function') {
+        
+        /*
+         * If no asynchronous handlers are running, call back with the results
+         */
+        
+        if (typeof this.callback === 'function' && this.waitingForHandler === false) {
             this.callback(this.errors, event);
         }
-
-        if (this.errors.length > 0) {
+        
+        /*
+         * Prevent the form submission if there are errors or async handlers running
+         */
+        
+        if (this.errors.length > 0 || this.waitingForHandler === true) {
             if (event && event.preventDefault) {
                 event.preventDefault();
             } else {
@@ -320,10 +361,18 @@
             } else if (method.substring(0, 9) === 'callback_') {
                 // Custom method. Execute the handler if it was registered
                 method = method.substring(9, method.length);
-
-                if (typeof this.handlers[method] === 'function') {
-                    if (this.handlers[method].apply(this, [field.value]) === false) {
+                var handler = this.handlers[method];
+                
+                if (typeof handler.handler === 'function') {
+                    var result = handler.handler.apply(this, [field.value, handler.callback]);
+                
+                    if (handler.async === true) {
+                        this.waitingForHandler = true;
+                    } else if (result === false) {
                         failed = true;
+                        
+                        handler.completed = true;
+                        handler.result = false;
                     }
                 }
             }
@@ -361,7 +410,45 @@
             }
         }
     };
-
+    
+    FormValidator.prototype._pushError = function(method, param, field) {
+        // Make sure we have a message for this rule
+        var source = this.messages[method] || defaults.messages[method];
+        
+        if (source) {
+            var message = source.replace('%s', field.display);
+            
+            if (param) {
+                message = message.replace('%s', (this.fields[param]) ? this.fields[param].display : param);
+            }
+            
+            this.errors.push(message);
+        } else {
+            this.errors.push('An error has occurred with the ' + field.display + ' field.');
+        }
+    };
+    
+    FormValidator.prototype._checkForCompletedHandlers = function() {
+        var completed = true;
+        
+        for (var name in this.handlers) {
+            if (this.handlers[name].completed === false) {
+                completed = false;
+            } else if (this.handlers[name].result === false) {
+                // TODO: how to attach this error to a particular field
+                this._pushError(name, null, {});
+            }
+        }
+        
+        if (completed) {
+            this.waitingForHandler = false;
+            
+            if (typeof this.callback === 'function' && this.waitingForHandler === false) {
+                this.callback(this.errors, event);
+            }
+        }
+    };
+    
     /*
      * @private
      * Object containing all of the validation hooks
