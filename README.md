@@ -12,6 +12,7 @@ validate.js is a lightweight JavaScript form validation library inspired by Code
 - Works in all major browsers, (even IE6!)
 - Modeled off the CodeIgniter form validation API
 - Multi-language support - Korean (<https://github.com/jnhwkim/validate.js>)
+- Multi-language support - Spanish (<https://github.com/tongilsoft/validate.js>)
 
 ## How to use
 

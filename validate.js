@@ -45,6 +45,8 @@
     /**
      * Multi-language support (Korean)
      * by @jnhwkim
+     * Multi-language support (Spanish)
+     * by @tongilsoft
      */
 
     var languages = {
@@ -94,6 +96,32 @@
                     }
                 }
                 return msg;
+            }
+        },
+        es: {
+            messages: {
+                required: '%s es obligatorio.',
+                matches: '%s no coincide con %s.',
+                valid_email: '%s debería contener un email válido.',
+                valid_emails: '%s debería contener ua lista de emails válidos.',
+                min_length: '%s debería contener por lo menos %s caracteres de largo.',
+                max_length: '%s no puede exceder de %s caracteres de largo.',
+                exact_length: '%s debería contener exactamente %s caracteres de largo.',
+                greater_than: '%s deberia ser un número mayor a %s.',
+                less_than: '%s deberia ser un número menor a %s.',
+                alpha: '%s debería estar compuesto sólo de caracteres alfabéticos.',
+                alpha_numeric: '%s debería estar compuesto sólo de caracteres alfa-numéricos.',
+                alpha_dash: '%s debería estar compuesto sólo de caracteres alfa-numéricos, guiones y guiones bajos.',
+                numeric: '%s debería estar compuesto sólo de caracteres numéricos.',
+                integer: '%s debería ser un número entero.',
+                decimal: '%s debería ser un número decimal.',
+                is_natural: '%s debería ser un número positivo.',
+                is_natural_no_zero: '%s debería ser un número mayor a cero.',
+                valid_ip: '%s debería ser una dirección IP válida.',
+                valid_base64: '%s debería ser un string de base64.',
+                valid_credit_card: '%s debería ser un número de tarjeta de crédito válido.',
+                valid_date: '%s debería ser una fecha válida en formato (dd/mm/yyyy).',
+                is_file_type: '%s deberían ser archivos de tipo %s.'
             }
         }
     };
